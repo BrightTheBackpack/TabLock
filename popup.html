@@ -22,7 +22,24 @@
                 <h3>Mode B</h3>
             </div>
             
-            <div></div>
+            <div id="classA">
+                <!-- mode A is the one where it auto deletes tabs after a certain threshold -->
+                 <div class = "settings-item">
+                    <p style = "margin-right: 10px">Number of Tabs: </p>
+                    <input class = "setting-field" type ="number" id = "thresholdA" min = 5 max = 60 value = 15 />
+                 </div>
+            </div>
+            <div id="classB">
+                <div class="settings-item">
+                    <p style = "margin-right: 10px">Inactive Time Threshold:</p>
+                    <input class = "setting-field" type =  "number" id = "deacyB" min = 5 max = 60 value = 20 />
+                </div>
+                <div class="settings-item">
+                    <p style = "margin-right: 10px">Percent of inactive tabs:</p>
+                    <input class = "setting-field" type =  "number" id = "percentB" min = 40 max = 80 value = 60 />
+                </div>
+
+            </div>
             <button class="btn" id="save-settings">Save Settings</button>
 
         </div>

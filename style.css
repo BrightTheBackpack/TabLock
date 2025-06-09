@@ -77,3 +77,11 @@ input:checked + .slider:before {
     display: flex;
     margin: 0 10px;
 }
+
+.settings-item {
+    display: flex;
+    align-items: center;
+}
+#classB {
+    display: none;
+}

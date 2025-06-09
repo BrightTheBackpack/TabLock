@@ -3,13 +3,45 @@ let tablist = {};
 let userInfo = {};
 let previousActiveTab = null;
 let mode = false;
+let thresholdA;
+let decayB;
+let percentB;
+
+chrome.storage.local.get(['lock', 'thresholdA', 'decayB', 'percentB'], function (result) {
+
+  
+  thresholdA = result.thresholdA || 15; 
+  decayB = result.decayB || 20; 
+  percentB = result.percentB || 60; 
+  
+  console.log("Threshold A:", thresholdA);
+  console.log("Decay B:", decayB);
+  console.log("Percent B:", percentB);
+});
 chrome.runtime.onMessage.addListener(function (message, sender) {
   if (message.type === "lockUpdate") {
     console.log("Popup says lock is:", message.value);
     mode = message.value;
   }
-});
+  if(message.type === "settingUpdate"){
+    if(message.id === "thresholdA"){
+        thresholdA = message.value;
+    }
+    if(message.id === "decayB"){
+        decayB = message.value;
+    }
+    if(message.id === "percentB"){
+        percentB = message.value;
+    }
+    console.log(`Setting ${message.id} updated to:`, message.value, " in back ground.js");
+  }
 
+});
+chrome.tabs.onCreated.addListener(function (tab) {
+  console.log('New Tab Created')
+    tablist[tab.id] = {url: tab.url, active: tab.active, lastActive: Date.now(), decayed: false};
+  a()
+});
 chrome.tabs.query({ }, function (tabs) {
     tabs.forEach(function (tab) {
         tablist[tab.id] = {url: tab.url, active: tab.active};
@@ -46,6 +78,7 @@ chrome.idle.onStateChanged.addListener((newState) => {
   });
 
   chrome.tabs.onActivated.addListener((activeInfo) => {
+  
     tablist[previousActiveTab].active = false;
    
     tablist[previousActiveTab].lastActive = Date.now();
@@ -72,6 +105,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   console.log("Alarm triggered:", alarm.name);
   
   if (alarm.name === 'checkTabs') {
+    if(!mode){
+      a();
+
+    }
     console.log("Checking tabs for decay...");
     let decayCount = 0;
     let totalTabs = Object.keys(tablist).length;
@@ -97,10 +134,33 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     console.log(`Total tabs: ${totalTabs}`);
     if(decayCount/ totalTabs >= 0.75){
       console.log("more than 75% tabs decayed");
-      chrome.storage.set({lock: true}, function() {
+      chrome.storage.local.set({lock: true}, function() {
         console.log("Decayed tabs status set to true");
       });
     
     }
 
 }})
+
+
+function a(){
+    console.log('mode A')
+    let totalTabs = Object.keys(tablist).length;
+    console.log("Total tabs:", totalTabs, "Threshold A:", thresholdA);
+    while(totalTabs> thresholdA){
+      console.log("Current total tabs:", totalTabs);
+      const [tabID, oldestTab] = Object.entries(tablist).reduce(
+        ([oldestKey, oldestTab], [currentKey, currentTab]) =>
+          currentTab.lastActive < oldestTab.lastActive
+            ? [currentKey, currentTab]
+            : [oldestKey, oldestTab]
+      );
+
+      console.log(oldestTab, tabID)
+      
+      chrome.tabs.remove([parseInt(tabID)])
+      delete tablist[tabID];
+      totalTabs = Object.keys(tablist).length;
+
+    }
+}
