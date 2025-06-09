@@ -1,0 +1,29 @@
+{
+    "name": "TabLock",
+    "description": "Tab Management Tool for Tab Hoarders",
+    "version": "1.0",
+    "permissions": [
+      "tabs",
+      "storage",
+      "activeTab",
+      "scripting",
+      "idle",
+      "alarms"
+
+    ],
+    "host_permissions":["<all_urls>"],
+    "manifest_version": 3,
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": "tab.jpg"
+    },
+    "background": {
+      "service_worker": "background.js",
+      "type": "module"
+    },
+    "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }]
+  }

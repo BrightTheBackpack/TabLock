@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="style.css">
+        <script src="popup.js" defer></script>
+
+    </head>
+    <body style="width:400px; height:450px">
+
+        <div class="main" id="header">
+            <h1>TabLock</h1>
+            <button class="btn" id="settings"><i class="fa fa-gear"></i></button>
+        </div>
+        <div class="settings" id="settings-panel">
+            <h2>Settings</h2>
+            <div id="modeswitch">
+                <h3 >Mode A</h3>
+                <label class="switch">
+                    <input type="checkbox" id="mode-switch">
+                    <span class="slider round"></span>
+                </label>
+                <h3>Mode B</h3>
+            </div>
+            
+            <div></div>
+            <button class="btn" id="save-settings">Save Settings</button>
+
+        </div>
+        <!-- maybe a list of the most lengthyly opened tabs, and an option to close them -->
+    </body>
+</html>
