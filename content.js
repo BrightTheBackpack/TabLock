@@ -4,6 +4,7 @@ console.log("content.js loaded");
 let locked;
 let isLocked = false;
 
+//get lock status
 chrome.storage.local.get(['lock'], function (result) {
     locked = result.lock || false;
     console.log("Lock state on content script load:", locked);
@@ -11,25 +12,18 @@ chrome.storage.local.get(['lock'], function (result) {
         startLocker();
     }
 });
-
-async function onTabVisible() {
-    console.log("Tab is now visible");
-    await chrome.storage.local.get(['lock'], (result) => {
-        console.log(result)
-    });
-}
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    onTabVisible();
+//listen for lock updates
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === "lockUpdate") {
+    if(request.value == true){
+      startLocker();
+    } 
+   
   }
 });
 
-// Optional: also trigger on load if already visible
-if (document.visibilityState === "visible") {
-  onTabVisible();
-}
-//also later make it so it auto deletes after a certain time
 
+//lock the screen
 function lockScreen(){
   const existing = document.getElementById('lock-screen');
   if (existing) return;
@@ -52,15 +46,18 @@ function lockScreen(){
 
 }
 
+//start interval that keeps locking the screen
 function startLocker() {
   if (!locker) {
     locker = setInterval(() => {
       lockScreen();
-    }, 1000);
+    }, 10);
     isLocked = true;
   }
 }
 
+//stop the interval
+//todo make it unlock
 function stopLocker() {
   if (locker) {
     clearInterval(locker);

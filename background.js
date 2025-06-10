@@ -7,62 +7,28 @@ let thresholdA;
 let decayB;
 let percentB;
 
-chrome.storage.local.get(['lock', 'thresholdA', 'decayB', 'percentB'], function (result) {
+loadStorageValues();
+popupMessageReceiver();
 
-  
-  thresholdA = result.thresholdA || 15; 
-  decayB = result.decayB || 20; 
-  percentB = result.percentB || 60; 
-  
-  console.log("Threshold A:", thresholdA);
-  console.log("Decay B:", decayB);
-  console.log("Percent B:", percentB);
-});
-chrome.runtime.onMessage.addListener(function (message, sender) {
-  if (message.type === "lockUpdate") {
-    console.log("Popup says lock is:", message.value);
-    mode = message.value;
-  }
-  if(message.type === "settingUpdate"){
-    if(message.id === "thresholdA"){
-        thresholdA = message.value;
-    }
-    if(message.id === "decayB"){
-        decayB = message.value;
-    }
-    if(message.id === "percentB"){
-        percentB = message.value;
-    }
-    console.log(`Setting ${message.id} updated to:`, message.value, " in back ground.js");
-  }
-
-});
+//when new tab is created, add it to the tablist
 chrome.tabs.onCreated.addListener(function (tab) {
   console.log('New Tab Created')
-    tablist[tab.id] = {url: tab.url, active: tab.active, lastActive: Date.now(), decayed: false};
+  tablist[tab.id] = {url: tab.url, active: tab.active, lastActive: Date.now(), decayed: false};
   a()
 });
-chrome.tabs.query({ }, function (tabs) {
-    tabs.forEach(function (tab) {
-        tablist[tab.id] = {url: tab.url, active: tab.active};
 
-        if(!tab.active){ 
-            console.log("Inactive tab found:", tab.id, tab.url);
-        }else{
-            previousActiveTab = tab.id;
-            console.log("Tab ID:", tab.id, "URL:", tab.url);
-            tablist[tab.id].lastActive = Date.now();
-            console.log(Date.now(), "Tab last active time set for ID:", tab.id);
-        }
+initTabList();
 
-    });
-    console.log("Tab list initialized:", tablist);
+
+chrome.idle.setDetectionInterval(30); //set idle detection interval to 30 seconds
+
+//alarm to check for tab decay
+chrome.alarms.create('checkTabs', {
+  delayInMinutes: 1,
+  periodInMinutes: 1
 });
-chrome.idle.setDetectionInterval(15);
-   chrome.alarms.create('checkTabs', {
-    delayInMinutes: 1,
-    periodInMinutes: 1
-  });
+
+//listner for user idle
 chrome.idle.onStateChanged.addListener((newState) => {
     console.log("state changed to:", newState);
 
@@ -77,20 +43,9 @@ chrome.idle.onStateChanged.addListener((newState) => {
     }
   });
 
-  chrome.tabs.onActivated.addListener((activeInfo) => {
-  
-    tablist[previousActiveTab].active = false;
-   
-    tablist[previousActiveTab].lastActive = Date.now();
+updateActiveTab();
 
-    tablist[previousActiveTab].lastActive = Date.now();
-    tablist[activeInfo.tabId].active = true;
-    tablist[activeInfo.tabId].lastActive = Date.now();
-    console.log("tab deactivated:", previousActiveTab);
-    previousActiveTab = activeInfo.tabId;
-    
-    console.log("Tab activated:", activeInfo.tabId);
-  });
+//alarm to check for tab decay 2.0
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason !== 'install') {
     return;
@@ -101,6 +56,8 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     periodInMinutes: 1
   });
 });
+
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   console.log("Alarm triggered:", alarm.name);
   
@@ -110,32 +67,20 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
     }
     console.log("Checking tabs for decay...");
-    let decayCount = 0;
-    let totalTabs = Object.keys(tablist).length;
-    for(const tabId in tablist) {
-      console.log(`Checking tab ${tabId}...`);
-      const tab = tablist[tabId];
-      console.log(`Tab ${tabId} - Active: ${tab.active}, Last Active: ${tab.lastActive}, Current Time: ${Date.now()- 30000}`);
-      let isLengthOfTime = tab.lastActive < Date.now() - 3000;//chjange to 1200000
-      console.log(isLengthOfTime, !tab.active);
-      if (!tab.active && isLengthOfTime) { 
-        console.log(`Tab ${tabId} has been inactive for more than 20 minute.`);
-        tab.decayed = true;
-      }
-      if(tab.decayed){
-      decayCount++;
-    }
+    let { decayCount, totalTabs } = updateDecay();
+    
 
-    }
- 
-    if(decayCount > 0){
-      console.log(`Total decayed tabs: ${decayCount}`);
-    }
+    //check what percent is decayed, and then sends lock
+    //todo: chance percent to variable
     console.log(`Total tabs: ${totalTabs}`);
     if(decayCount/ totalTabs >= 0.75){
       console.log("more than 75% tabs decayed");
       chrome.storage.local.set({lock: true}, function() {
         console.log("Decayed tabs status set to true");
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true});
+        });
+
       });
     
     }
@@ -143,6 +88,97 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 }})
 
 
+
+
+function updateDecay() {
+  let decayCount = 0;
+  let totalTabs = Object.keys(tablist).length;
+  for (const tabId in tablist) {
+    console.log(`Checking tab ${tabId}...`);
+    const tab = tablist[tabId];
+    console.log(`Tab ${tabId} - Active: ${tab.active}, Last Active: ${tab.lastActive}, Current Time: ${Date.now() - 30000}`);
+    let isLengthOfTime = tab.lastActive < Date.now() - 3000; //chjange to 1200000
+    console.log(isLengthOfTime, !tab.active);
+    if (!tab.active && isLengthOfTime) {
+      console.log(`Tab ${tabId} has been inactive for more than 20 minute.`);
+      tab.decayed = true;
+    }
+    if (tab.decayed) {
+      decayCount++;
+    }
+
+  }
+  return { decayCount, totalTabs };
+}
+
+function updateActiveTab() {
+  chrome.tabs.onActivated.addListener((activeInfo) => {
+
+    tablist[previousActiveTab].active = false;
+    tablist[previousActiveTab].lastActive = Date.now();
+    tablist[previousActiveTab].lastActive = Date.now();
+    tablist[activeInfo.tabId].active = true;
+    tablist[activeInfo.tabId].lastActive = Date.now();
+    console.log("tab deactivated:", previousActiveTab);
+    previousActiveTab = activeInfo.tabId;
+    console.log("Tab activated:", activeInfo.tabId);
+
+  });
+}
+
+function loadStorageValues() {
+  chrome.storage.local.get(['lock', 'thresholdA', 'decayB', 'percentB'], function (result) {
+    thresholdA = result.thresholdA || 15;
+    decayB = result.decayB || 20;
+    percentB = result.percentB || 60;
+    console.log("Threshold A:", thresholdA);
+    console.log("Decay B:", decayB);
+    console.log("Percent B:", percentB);
+  });
+}
+
+function popupMessageReceiver() {
+  chrome.runtime.onMessage.addListener(function (message, sender) {
+    if (message.type === "lockUpdate") {
+      console.log("Popup says lock is:", message.value);
+      mode = message.value;
+    }
+    if (message.type === "settingUpdate") {
+      if (message.id === "thresholdA") {
+        thresholdA = message.value;
+      }
+      if (message.id === "decayB") {
+        decayB = message.value;
+      }
+      if (message.id === "percentB") {
+        percentB = message.value;
+      }
+      console.log(`Setting ${message.id} updated to:`, message.value, " in back ground.js");
+    }
+
+  });
+}
+
+function initTabList() {
+  chrome.tabs.query({}, function (tabs) {
+    tabs.forEach(function (tab) {
+      tablist[tab.id] = { url: tab.url, active: tab.active, lastActive: Date.now() - 1000 };
+
+      if (!tab.active) {
+        console.log("Inactive tab found:", tab.id, tab.url);
+      } else {
+        previousActiveTab = tab.id;
+        console.log("Tab ID:", tab.id, "URL:", tab.url);
+        tablist[tab.id].lastActive = Date.now();
+        console.log(Date.now(), "Tab last active time set for ID:", tab.id);
+      }
+
+    });
+    console.log("Tab list initialized:", tablist);
+  });
+}
+
+// Function to handle tab removal in mode A
 function a(){
     console.log('mode A')
     let totalTabs = Object.keys(tablist).length;
