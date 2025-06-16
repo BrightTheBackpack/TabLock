@@ -3,7 +3,7 @@ console.log("content.js loaded");
 
 let locked;
 let isLocked = false;
-
+let locker;
 //get lock status
 chrome.storage.local.get(['lock'], function (result) {
     locked = result.lock || false;
@@ -14,7 +14,9 @@ chrome.storage.local.get(['lock'], function (result) {
 });
 //listen for lock updates
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  console.log("msg received")
   if (request.action === "lockUpdate") {
+    console.log("Lock update received:", request.value);
     if(request.value == true){
       startLocker();
     } 
@@ -45,6 +47,12 @@ function lockScreen(){
   document.body.appendChild(lockScreen);
 
 }
+function unlockScreen() {
+  const lockScreen = document.getElementById('lock-screen');
+  if (lockScreen) {
+    lockScreen.remove();
+  }
+}
 
 //start interval that keeps locking the screen
 function startLocker() {
@@ -61,6 +69,7 @@ function startLocker() {
 function stopLocker() {
   if (locker) {
     clearInterval(locker);
+    unlockScreen();
     locker = null;
     isLocked = false;
   }

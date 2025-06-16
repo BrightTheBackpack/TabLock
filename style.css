@@ -85,3 +85,14 @@ input:checked + .slider:before {
 #classB {
     display: none;
 }
+#settings-panel {
+    position: absolute;
+    /* display: none; */
+    top: 50px;
+    right: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}

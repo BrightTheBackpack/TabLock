@@ -73,11 +73,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     //check what percent is decayed, and then sends lock
     //todo: chance percent to variable
     console.log(`Total tabs: ${totalTabs}`);
-    if(decayCount/ totalTabs >= 0.75){
+    console.log(`Decayed tabs: ${decayCount}`);
+    if(decayCount/ totalTabs >= (percentB/100)){
       console.log("more than 75% tabs decayed");
       chrome.storage.local.set({lock: true}, function() {
         console.log("Decayed tabs status set to true");
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        chrome.tabs.query({ active: true }, function(tabs) {
+          console.log(tabs)
           chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true});
         });
 
@@ -96,11 +98,11 @@ function updateDecay() {
   for (const tabId in tablist) {
     console.log(`Checking tab ${tabId}...`);
     const tab = tablist[tabId];
-    console.log(`Tab ${tabId} - Active: ${tab.active}, Last Active: ${tab.lastActive}, Current Time: ${Date.now() - 30000}`);
-    let isLengthOfTime = tab.lastActive < Date.now() - 3000; //chjange to 1200000
+    console.log(`Tab ${tabId} - Active: ${tab.active}, Last Active: ${tab.lastActive}, Current Time Threshold: ${Date.now() - (1000* 60 *decayB)}`);
+    let isLengthOfTime = tab.lastActive < Date.now() - (1000* 60 *decayB); //chjange to 1200000
     console.log(isLengthOfTime, !tab.active);
     if (!tab.active && isLengthOfTime) {
-      console.log(`Tab ${tabId} has been inactive for more than 20 minute.`);
+      console.log(`Tab ${tabId} has been inactive for more than the alloted time.`);
       tab.decayed = true;
     }
     if (tab.decayed) {
@@ -162,7 +164,7 @@ function popupMessageReceiver() {
 function initTabList() {
   chrome.tabs.query({}, function (tabs) {
     tabs.forEach(function (tab) {
-      tablist[tab.id] = { url: tab.url, active: tab.active, lastActive: Date.now() - 1000 };
+      tablist[tab.id] = { url: tab.url, active: tab.active, lastActive: Date.now() - (1000) };
 
       if (!tab.active) {
         console.log("Inactive tab found:", tab.id, tab.url);
