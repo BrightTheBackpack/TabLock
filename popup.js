@@ -19,6 +19,11 @@ chrome.storage.local.get('lock', function (result) {
     });
     
 };
+chrome.runtime.sendMessage({ action: "tabCount" }, function(response) {
+    console.log("Tab count response:", response);
+    const countElement = document.getElementById('count');
+    countElement.textContent = response.count || '0';
+});
 for (const field of settingFields) {
     chrome.storage.local.get(field.id, function (result) {
         if (result[field.id] !== undefined) {

@@ -15,10 +15,24 @@ chrome.tabs.onCreated.addListener(function (tab) {
   console.log('New Tab Created')
   tablist[tab.id] = {url: tab.url, active: tab.active, lastActive: Date.now(), decayed: false};
   a()
+  modeAWarningAlert();
 });
 
 initTabList();
-
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if(request.action === "setStorageValue"){
+    chrome.storage.local.set({[request.key]: request.value}, function() {
+      console.log(`Storage value for ${request.key} set to:`, request.value);
+    });
+    
+  }
+  if(request.action === "tabCount"){
+    console.log("Tab count request received");
+    let count = Object.keys(tablist).length;
+    console.log("Current tab count:", count);
+    sendResponse({count: count});
+  }
+});
 
 chrome.idle.setDetectionInterval(30); //set idle detection interval to 30 seconds
 
@@ -89,20 +103,27 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 }})
 
-
-
+//when tab url changes, update the tablist
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+  if (changeInfo.status === 'complete') {
+    tablist[tabId].url = tab.url;
+    modeAWarningAlert();
+  }
+});
+//when tab deleted, remove it from the tablist
+chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+  console.log("Tab removed:", tabId);
+  delete tablist[tabId];
+});
 
 function updateDecay() {
   let decayCount = 0;
   let totalTabs = Object.keys(tablist).length;
   for (const tabId in tablist) {
-    console.log(`Checking tab ${tabId}...`);
     const tab = tablist[tabId];
-    console.log(`Tab ${tabId} - Active: ${tab.active}, Last Active: ${tab.lastActive}, Current Time Threshold: ${Date.now() - (1000* 60 *decayB)}`);
     let isLengthOfTime = tab.lastActive < Date.now() - (1000* 60 *decayB); //chjange to 1200000
     console.log(isLengthOfTime, !tab.active);
     if (!tab.active && isLengthOfTime) {
-      console.log(`Tab ${tabId} has been inactive for more than the alloted time.`);
       tab.decayed = true;
     }
     if (tab.decayed) {
@@ -124,6 +145,7 @@ function updateActiveTab() {
     console.log("tab deactivated:", previousActiveTab);
     previousActiveTab = activeInfo.tabId;
     console.log("Tab activated:", activeInfo.tabId);
+    modeAWarningAlert();
 
   });
 }
@@ -182,17 +204,22 @@ function initTabList() {
 
 // Function to handle tab removal in mode A
 function a(){
+  console.log(tablist)
     console.log('mode A')
     let totalTabs = Object.keys(tablist).length;
     console.log("Total tabs:", totalTabs, "Threshold A:", thresholdA);
+   if(totalTabs >= thresholdA-1){
+
+    modeAWarningAlert();
+   }
     while(totalTabs> thresholdA){
       console.log("Current total tabs:", totalTabs);
-      const [tabID, oldestTab] = Object.entries(tablist).reduce(
+       const [tabID, oldestTab] = Object.entries(tablist).reduce(
         ([oldestKey, oldestTab], [currentKey, currentTab]) =>
           currentTab.lastActive < oldestTab.lastActive
             ? [currentKey, currentTab]
             : [oldestKey, oldestTab]
-      );
+        );
 
       console.log(oldestTab, tabID)
       
@@ -201,4 +228,40 @@ function a(){
       totalTabs = Object.keys(tablist).length;
 
     }
+}
+
+function modeAWarningAlert(){
+  console.log("modeAWarningAlert called");
+  let totalTabs = Object.keys(tablist).length;
+  console.log(mode, "modeA")
+  console.log("Total tabs:", totalTabs, "Threshold A:", thresholdA);
+  if((totalTabs >= thresholdA-1) && !mode){
+    chrome.storage.local.set({AWarning : false}, function() {
+      console.log("AWarning set to true");
+    });
+    chrome.storage.local.get(['ADismissed'], function (result) {
+      if (result.ADismissed) {
+        console.log("AWarning already dismissed, not showing alert");
+        return;
+      }else{
+        const [tabID, oldestTab] = Object.entries(tablist).reduce(
+          ([oldestKey, oldestTab], [currentKey, currentTab]) =>
+            currentTab.lastActive < oldestTab.lastActive
+              ? [currentKey, currentTab]
+              : [oldestKey, oldestTab]
+        );
+        let url = oldestTab.url;
+         chrome.tabs.sendMessage(previousActiveTab, { action: "popupAlert", message: `You have ${totalTabs} tabs open!<br> The next tab to close is ${url}` });
+
+      }
+    });
+  }else{
+    chrome.storage.local.set({AWarning : false}, function() {
+      console.log("AWarning set to true");
+    });
+    chrome.storage.local.set({ADismissed: false}, function() {
+      console.log("ADismissed set to false");
+    });
+  }
+
 }
