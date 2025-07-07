@@ -3,7 +3,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <link rel="stylesheet" href="style.css">
         <script src="popup.js" defer></script>
-
+        <!-- todo: make tab list with inactivity time for mode B, make suggested tabs to close for modes A and C, add blurb about what each mode does -->
     </head>
     <body style="width:400px; height:450px">
 
@@ -15,15 +15,25 @@
             <h2>Tab Count</h2>
             <p id="count">0</p>
         </div>
+        <div class="main" id="oldest-tab-container">
+            <h2>Oldest Tab</h2>
+            <p id="oldest-tab"></p>
+        </div>
         <div class="settings" id="settings-panel">
             <h2>Settings</h2>
             <div id="modeswitch">
-                <h3 >Mode A</h3>
+                <!-- <h3 >Mode A</h3>
                 <label class="switch">
                     <input type="checkbox" id="mode-switch">
                     <span class="slider round"></span>
                 </label>
-                <h3>Mode B</h3>
+                <h3>Mode B</h3> -->
+                <p style="margin-right: 10px">Select Mode:</p>
+                <select id="mode-select" class="setting-field">
+                    <option value="A">Mode A</option>
+                    <option value="B">Mode B</option>
+                    <option value="C">Mode C</option>
+                </select>
             </div>
             
             <div id="classA">
@@ -36,20 +46,47 @@
             </div>
             <div id="classB">
                 <div class="settings-item">
-                    <p style = "margin-right: 10px">Inactive Time Threshold:</p>
-                    <input class = "setting-field" type =  "number" id = "decayB" min = 5 max = 60 value = 20 />
+                    <p style = "margin-right: 10px">Inactive Time Threshold(Minutes):</p>
+                    <input class = "setting-field" type =  "number" id = "decayB" min = 1 max = 60 value = 10 />
                     <p class="setting-field" id = "decayBError"></p>
                 </div>
                 <div class="settings-item">
-                    <p style = "margin-right: 10px">Percent of inactive tabs:</p>
+                    <!-- <p style = "margin-right: 10px">Percent of inactive tabs:</p>
                     <input class = "setting-field" type =  "number" id = "percentB" min = 40 max = 80 value = 60 />
-                    <p class="setting-field" id = "percentBError"></p>
+                    <p class="setting-field" id = "percentBError"></p> -->
                 </div>
 
             </div>
+            <div id="classC">
+                <div class="settings-item">
+                    <p style = "margin-right: 10px">Number of Tabs to Lock Browser:</p>
+                    <input class = "setting-field" type = "number" id = "amountC" min = 2 max = 60 value = 5 />
+                    <p class="setting-field" id = "amountCError"></p>
+                </div>
+            </div>
+
             <button class="btn" id="submit">Save Settings</button>
 
         </div>
-        <!-- maybe a list of the most lengthyly opened tabs, and an option to close them -->
+        <div class="main" id = "tabListDiv" >
+            <button class = "dropdown" id="tabList" content="tablistContent"><h2>Tab List ></h2></button>
+            <div class="dropdown-content" id="tabListContent">
+                Temp content
+            </div>
+        </div>
+        <div class = "main" id = "modeInfo">
+            <div id="modeDescription">
+                <h2>Mode A</h2>
+                <p>This mode automatically closes tabs after a certain number of open tabs is reached.</p>
+            </div>
+            <div id="modeDescription">
+                <h2>Mode B</h2>
+                <p>This mode closes tabs that have been inactive for a certain amount of time.</p>
+            </div>
+            <div id="modeDescription">
+                <h2>Mode C</h2>
+                <p>This mode locks down the browser if a certain number of tabs are open, and a set amount of tabs need to be closed for the browser to unlock.</p>
+            </div>
+        </div>
     </body>
 </html>
