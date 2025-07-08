@@ -3,9 +3,9 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <link rel="stylesheet" href="style.css">
         <script src="popup.js" defer></script>
-        <!-- todo: make tab list with inactivity time for mode B, make suggested tabs to close for modes A and C, add blurb about what each mode does -->
+        <!-- todo: verify variable vlues-->
     </head>
-    <body style="width:400px; height:450px">
+    <body style="width:400px">
 
         <div class="main" id="header">
             <h1>TabLock</h1>
@@ -39,33 +39,37 @@
             <div id="classA">
                 <!-- mode A is the one where it auto deletes tabs after a certain threshold -->
                  <div class = "settings-item">
-                    <p style = "margin-right: 10px">Number of Tabs: </p>
-                    <input class = "setting-field" type ="number" id = "thresholdA" min = 5 max = 60 value = 15 />
-                    <p class="setting-field" id = "thresholdAError"></p>
+                    <div class = "input-line">
+                        <p style = "margin-right: 10px">Number of Tabs: </p>
+                        <input class = "setting-field" type ="number" id = "thresholdA" min = 5 max = 60 value = 15 />
+
+                    </div>
+                    <p class="" id = "thresholdAError"></p>
                 </div>
             </div>
             <div id="classB">
                 <div class="settings-item">
+                    <div class = "input-line">
                     <p style = "margin-right: 10px">Inactive Time Threshold(Minutes):</p>
-                    <input class = "setting-field" type =  "number" id = "decayB" min = 1 max = 60 value = 10 />
-                    <p class="setting-field" id = "decayBError"></p>
+                    <input class = "setting-field" type =  "number" id = "decayB" min = 1 max = 30 value = 10 />
+
+
+                    </div>
+                    <p class="" id = "decayBError"></p>
                 </div>
-                <div class="settings-item">
-                    <!-- <p style = "margin-right: 10px">Percent of inactive tabs:</p>
-                    <input class = "setting-field" type =  "number" id = "percentB" min = 40 max = 80 value = 60 />
-                    <p class="setting-field" id = "percentBError"></p> -->
-                </div>
+        
 
             </div>
             <div id="classC">
                 <div class="settings-item">
-                    <p style = "margin-right: 10px">Number of Tabs to Lock Browser:</p>
-                    <input class = "setting-field" type = "number" id = "amountC" min = 2 max = 60 value = 5 />
-                    <p class="setting-field" id = "amountCError"></p>
+                    <div class = "input-line">
+                        <p style = "margin-right: 10px">Number of Tabs:</p>
+                        <input class = "setting-field" type = "number" id = "amountC" min = 2 max = 60 value = 50 />
+                    </div>
+                    <p class="" id = "amountCError"></p>
                 </div>
             </div>
 
-            <button class="btn" id="submit">Save Settings</button>
 
         </div>
         <div class="main" id = "tabListDiv" >
@@ -78,14 +82,17 @@
             <div id="modeDescription">
                 <h2>Mode A</h2>
                 <p>This mode automatically closes tabs after a certain number of open tabs is reached.</p>
+                <p>Must be between 5-60 tabs</p>
             </div>
             <div id="modeDescription">
                 <h2>Mode B</h2>
                 <p>This mode closes tabs that have been inactive for a certain amount of time.</p>
+                <p>Must be between 1-60 minutes</p>
             </div>
             <div id="modeDescription">
                 <h2>Mode C</h2>
                 <p>This mode locks down the browser if a certain number of tabs are open, and a set amount of tabs need to be closed for the browser to unlock.</p>
+                <p>Must be between 2-60 tabs</p>
             </div>
         </div>
     </body>

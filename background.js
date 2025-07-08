@@ -31,6 +31,7 @@ chrome.tabs.onCreated.addListener(function (tab) {
 
 initTabList();
 chrome.windows.onFocusChanged.addListener((windowId) => {
+  console.log("Window focus changed, window ID:", windowId);
   isChromeFocused = windowId !== chrome.windows.WINDOW_ID_NONE;
 });
 
@@ -41,6 +42,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       console.log(`Storage value for ${request.key} set to:`, request.value);
     });
     
+  }
+  if(request.action === "getStorageValue"){
+    chrome.storage.local.get([request.key], function(result) {
+      sendResponse({value: result[request.key]});
+    });
+    return true; // Keep the message channel open for sendResponse
   }
   if(request.action === "tabCount"){
     console.log("Tab count request received");
@@ -60,6 +67,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       console.log("Tab closed:", request.tabId);
       delete tablist[request.tabId];
       modeAWarningAlert();
+      if(mode === "C"){
+        c();
+      }
       sendResponse({status: "success"});
     });
     return true; // Keep the message channel open for sendResponse
@@ -83,6 +93,39 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     const tabId = request.tabId;
     tablist[tabId].ignored = false;
   
+  }
+  if(request.action === "closeTab"){
+    const tabId = request.tabId;
+    chrome.tabs.remove(tabId, function() {
+      console.log("Tab closed:", tabId);
+      delete tablist[tabId];
+      modeAWarningAlert();
+      if(mode === "C"){
+        c();
+      }
+      sendResponse({status: "success"});
+    });
+  }
+  if(request.action === "tick"){
+      if((userInfo.state === "active") ) {
+    chrome.tabs.query({}, (tabs) => {
+      
+      for(const tab of tabs){
+        if(tablist[tab.id].ignored == true) continue; // skip if tab is not in tablist
+        if(tablist[tab.id].active == true){
+
+          tablist[tab.id].stopwatch = 0;
+        }else{
+          tablist[tab.id].stopwatch += 1;
+        }
+        if(tablist[tab.id].stopwatch >= (parseInt(decayB) * 60) && (mode === "B")) {
+          chrome.tabs.remove(tab.id);
+          delete tablist[tab.id];
+        }
+      }
+      
+    })
+  }
   }
 });
 
@@ -137,32 +180,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     if( mode ==="C"){
       c();
     }
-    // console.log("Checking tabs for decay...");
-    // let { decayCount, totalTabs } = updateDecay();
-    
 
-    //check what percent is decayed, and then sends lock
-    //todo: chance percent to variable
-    // console.log(`Total tabs: ${totalTabs}`);
-    // console.log(`Decayed tabs: ${decayCount}`);
-    // if(decayCount/ totalTabs >= (percentB/100)){
-    //   console.log("more than 75% tabs decayed");
-    //   chrome.storage.local.set({lock: true}, function() {
-    //     console.log("Decayed tabs status set to true");
-    //     chrome.tabs.query({ active: true }, function(tabs) {
-    //       console.log(tabs)
-    //       chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true});
-    //     });
-
-    //   });
-    
-    // }
 
 }})
 
 function c() {
+  console.log("Mode C activated");
   let tabCount = Object.values(tablist).filter(tab => !tab.ignored).length;
-  if( tabCount > amountC) {
+    console.log(tabCount, amountC)
+
+  if( tabCount > parseInt(amountC)) {
+    
     chrome.storage.local.set({lock:true}, function() {
       chrome.tabs.query({ active: true }, function(tabs) {
         console.log("Sending lock update to content script");
@@ -170,6 +198,35 @@ function c() {
       });
     });
   }
+  chrome.storage.local.get(['lock'], function(result) {
+    if(result.lock === true){
+      if(tabCount > parseInt(amountC)/2){
+        chrome.storage.local.set({lock:true}, function() {
+          chrome.tabs.query({ active: true }, function(tabs) {
+            console.log("Sending lock update to content script");
+            chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true });
+          });
+        });
+      }else{
+        chrome.storage.local.set({lock:false}, function() {
+          chrome.tabs.query({ active: true }, function(tabs) {
+            console.log("Sending lock update to content script");
+            chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: false });
+          });
+        });
+      }
+    }
+  });
+  // else{
+ 
+  //   chrome.tabs.query({ active: true }, function(tabs) {
+  //     console.log("Sending lock update to content script");
+  //     chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: false });
+  //   });
+  //   chrome.storage.local.set({lock: false}, function() {
+  //     console.log("Lock state set to false");
+  //   });
+  // }
 }
 //when tab url changes, update the tablist
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -180,6 +237,9 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     tablist[tabId].title = tab.title;
     tablist[tabId].favicon = tab.favIconUrl;
     modeAWarningAlert();
+    if(mode === "C"){
+      c();
+    }
   }
 });
 //when tab deleted, remove it from the tablist
@@ -187,6 +247,9 @@ chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
   console.log("Tab removed:", tabId);
   delete tablist[tabId];
   modeAWarningAlert();
+  if(mode === "C"){
+    c();
+  }
 });
 
 function updateDecay() {
@@ -219,6 +282,9 @@ function updateActiveTab() {
     previousActiveTab = activeInfo.tabId;
     console.log("Tab activated:", activeInfo.tabId);
     modeAWarningAlert();
+    if(mode === "C"){
+      c();
+    }
 
   });
 }
@@ -234,6 +300,11 @@ function loadStorageValues() {
     console.log("Decay B:", decayB);
     console.log("Percent B:", percentB);
     console.log("Amount C:", amountC);
+    if(mode !== "C"){
+      chrome.storage.local.set({lock: false}, function() {
+        chrome.tabs.sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
+      });
+    }
   });
 }
 
@@ -242,6 +313,17 @@ function popupMessageReceiver() {
     if (message.type === "modeUpdate") {
       console.log("Popup says mode is:", message.value);
       mode = message.value;
+      modeAWarningAlert()
+      if(mode !== "C"){
+        chrome.storage.local.set({lock: false}, function() {
+          chrome.tabs.sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
+        });
+      
+      }
+      if(mode==="C"){
+        console.log("Mode C activated");
+        c();
+      }
     }
     if (message.type === "settingUpdate") {
       if (message.id === "thresholdA") {
@@ -252,6 +334,9 @@ function popupMessageReceiver() {
       }
       if (message.id === "percentB") {
         percentB = message.value;
+      }
+      if( message.id === "amountC") {
+        amountC = message.value;
       }
       console.log(`Setting ${message.id} updated to:`, message.value, " in back ground.js");
     }
@@ -315,6 +400,7 @@ function a(){
 }
 
 function modeAWarningAlert(){
+  console.log("Checking mode A warning alert");
   const [tabID, oldestTab] = Object.entries(tablist).reduce(
     ([oldestKey, oldestTab], [currentKey, currentTab]) => {
       if (currentTab.ignored) {
@@ -330,7 +416,8 @@ function modeAWarningAlert(){
   oldestTabUrl = oldestTab.url;
   let totalTabs = Object.values(tablist).filter(tab => !tab.ignored).length;
   if((totalTabs >= thresholdA-1) && mode === "A") {
-    chrome.storage.local.set({AWarning : false}, function() {
+    console.log("Total tabs:", totalTabs, "Threshold A:", thresholdA);
+    chrome.storage.local.set({AWarning : true}, function() {
     });
     chrome.storage.local.get(['ADismissed'], function (result) {
       if (result.ADismissed) {
@@ -338,6 +425,7 @@ function modeAWarningAlert(){
 
         return;
       }else{
+        console.log("Sending popup alert to content script");
         const [tabID, oldestTab] = Object.entries(tablist).reduce(
           ([oldestKey, oldestTab], [currentKey, currentTab]) => {
             if (currentTab.ignored) {
@@ -364,31 +452,3 @@ function modeAWarningAlert(){
   }
 
 }
-
-setInterval(() => {
-  if((userInfo.state === "active") && isChromeFocused) {
-    console.log("User is active, resetting stopwatches");
-    chrome.tabs.query({}, (tabs) => {
-      
-      for(const tab of tabs){
-        // console.log("checking tab:", tab.url, " active?:", tablist[tab.id].stopwatch)
-        if(!tablist[tab.id].ignored) continue; // skip if tab is not in tablist
-        if(tablist[tab.id].active == true){
-          // console.log("checking tab:", tab, " active?:", tab.active)
-
-          tablist[tab.id].stopwatch = 0;
-        }else{
-          tablist[tab.id].stopwatch += 1;
-        }
-        if(tablist[tab.id].stopwatch >= (decayB/60) && (mode === "B")) {
-          console.log("Tab has been inactive for 10 minutes, removing:", tab.id);
-          chrome.tabs.remove(tab.id);
-          delete tablist[tab.id];
-        }
-      }
-      
-    })
-  }
-
-
-}, 1000)
