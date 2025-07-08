@@ -20,7 +20,6 @@ chrome.storage.local.get('mode', function (result) {
     checkbox.value = result.mode; // cast undefined to false if not set
 
     }
-    console.log('Initial lock value from chrome.storage:', result.lock);
     chrome.runtime.sendMessage({ type: "lockUpdate", value: result.lock });
     toggleModeDisplay(checkbox.value)
 
@@ -30,7 +29,6 @@ chrome.storage.local.get('mode', function (result) {
 
 for ( const dropdownElement of dropdown) {
     dropdownElement.addEventListener('click', function() {
-        console.log('Dropdown clicked:', this.id);
         const content = document.getElementById(this.id + 'Content');
         if (content.style.display === 'block') {
             content.style.display = 'none';
@@ -44,7 +42,6 @@ for (const field of settingFields) {
     chrome.storage.local.get(field.id, function (result) {
         if (result[field.id] !== undefined) {
             field.value = result[field.id];
-            console.log(`Setting ${field.id} loaded with value:`, field.value);
         } else {
             console.warn(`Setting ${field.id} not found in storage, using default value.`);
         }
@@ -57,7 +54,6 @@ for (const field of settingFields) {
         // let error = true;
         if(error){
             chrome.storage.local.set({ [fieldId]: fieldValue }, function() {
-            console.log(`Setting ${fieldId} updated to:`, fieldValue);
             chrome.runtime.sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
         });
 
@@ -65,8 +61,6 @@ for (const field of settingFields) {
      
     });
 }
-console.log('Checkbox element:', checkbox);
-console.log('Checkbox state on load:', checkbox.value);
 
 // submit.addEventListener('click', function(event) {
 //     event.preventDefault();
@@ -100,7 +94,6 @@ console.log('Checkbox state on load:', checkbox.value);
 // })
 
 function handleError(id, fieldValue) {
-    console.log("handleError called with id:", id, "and error:", fieldValue);
         if(id === 'thresholdA') {
             if(fieldValue === '' || isNaN(fieldValue) || fieldValue <= 5 || fieldValue > 60) {
                 displayError(id, 'Invalid input for number of tabs: ' + fieldValue);
@@ -142,8 +135,6 @@ function displayError(id, error) {
 
 console.log("popup.js loaded");
 checkbox.addEventListener('change', function() {
-    console.log('Checkbox clicked:', this.checked);
-    console.log('Checkbox state changed:', this.value);
     toggleModeDisplay(this.value);
 
 
@@ -152,9 +143,7 @@ checkbox.addEventListener('change', function() {
 });
 
 function toggleModeDisplay(mode) {
-    console.log("Toggling mode display for mode:", mode);
         if (mode == "A") {
-            console.log("Mode A selected");
         chrome.storage.local.set({ "mode": "A" }, function() {
 
         });
@@ -162,7 +151,6 @@ function toggleModeDisplay(mode) {
         modeB.style.display = 'none';
         modeC.style.display = 'none';
     } if(mode == "B") {
-                    console.log("Mode B selected");
 
         chrome.storage.local.set({ "mode": "B" }, function() {
         });
@@ -170,7 +158,6 @@ function toggleModeDisplay(mode) {
         modeB.style.display = 'block';
         modeC.style.display = 'none';
     } if(mode == "C") {
-        console.log("Mode C selected");
         chrome.storage.local.set({ "mode": "C" }, function() {
         });
         modeA.style.display = 'none';
@@ -194,11 +181,9 @@ function getStats(){
     });
     chrome.runtime.sendMessage({ action: "tabList" }, function(response) {
         let tabList = response.tabList || {};
-        console.log("Tab list response:", tabList);
         const tablistContent = document.getElementById('tabListContent');
         tablistContent.innerHTML = ''; // Clear previous content
         for (const tabId in tabList){
-            console.log("Tab:", tabId);
             const tab = tabList[tabId];
             const tabElement = document.createElement('div');
             tabElement.style.cssText = `
@@ -259,7 +244,6 @@ function getStats(){
             `;
             close.onclick = () => {
                 chrome.runtime.sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function(response) {
-                    console.log("Tab closed:", response);
                     getStats();
                 });
             };
@@ -284,7 +268,6 @@ function getStats(){
             `;
             ignore.onclick = () => {
                 chrome.runtime.sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function(response) {
-                    console.log("Tab ignored:", response);
                     if(response.status === "too many tabs") {
                         alert("You can only ignore up to 3 tabs.");
                     }
@@ -308,7 +291,6 @@ function getStats(){
 </svg>`
                 ignore.onclick = () => {
                     chrome.runtime.sendMessage({ action: "unignoreTab", tabId: parseInt(tabId) }, function(response) {
-                        console.log("Tab unignored:", response);
                         getStats();
                     });
                 };

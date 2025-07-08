@@ -1,4 +1,3 @@
-console.log("content.js loaded");
 // lockScreen()
 
 let locked;
@@ -12,61 +11,48 @@ document.body.appendChild(div);
 
 chrome.storage.local.get(['lock'], function (result) {
     locked = result.lock || false;
-    console.log("Lock state on content script load:", locked);
     if (locked) {
         getStorageValue('amountC', function(amountC) {
-          console.log("Locking screen with amountC:", amountC);
           startLocker();
           tabSelector(amountC);
         });
 
     }else {
-      console.log("stopped locker due to false lock state")
       stopLocker()
     }
 });
 // let intervalId = setInterval(() => {
-//   console.log("Sending tick message to background script");
 //   chrome.runtime.sendMessage({ action: "tick",tab: window.location.href });
 
 // }, 1000);
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
-    console.log("Visibility changed to hidden, stopping interval");
     clearInterval(intervalId);
   } else if( document.visibilityState === 'visible') {
     intervalId = setInterval(() => {
       chrome.runtime.sendMessage({ action: "tick", tab: window.location.href });
 
     }, 1000);
-    console.log("Visibility changed to visible, interval restarted");
   }
 });
 //listen for lock updates
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log("msg received")
   if (request.action === "lockUpdate") {
-    console.log("Lock update received:", request.data);
     if(request.data == true){
           getStorageValue('amountC', function(amountC) {
-            console.log("Locking screen with amountC:", amountC);
           startLocker();
-          console.log("tab selector triggered from lockUpdate")
           tabSelector(amountC);
         });
     }else{
-      console.log("stopped locker due to lockUpdate")
       stopLocker(); //still needs to unlock tab selection
     }
 
   }
   if(request.action === "popupAlert") {
-    console.log("popupAlert received with message:", request.message);
     popupAlert(request.message);
   }
   if(request.action === "closeAlert")
     {
-      console.log("closeAlert received");
       let popupAlert = document.getElementById('popup-alert');
       if(popupAlert.parentNode) {
         popupAlert.parentNode.removeChild(popupAlert);
@@ -74,7 +60,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 function tabSelector(amount){
-  console.log("tabSelector called with amount:", amount);
   let prevTabSelector = document.getElementById('tab-selector');
   if (prevTabSelector) {
     prevTabSelector.remove();
@@ -107,16 +92,12 @@ function tabSelector(amount){
     let tablist = response.tabList;
     let tabCount = Object.keys(tablist).length;
 
-    console.log("Tab count:", tabCount, "Amount:", amount);
     if(tabCount <= amount/2){
-      console.log("stopping locker")
-      console.log(tabCount, amount/2)
       stopLocker();
       unlockScreen();
     }
    
     for (const tabId in tablist) {
-            console.log("Tab:", tabId);
             const tab = tablist[tabId];
             const tabElement = document.createElement('div');
             tabElement.style.cssText = `
@@ -182,14 +163,11 @@ function tabSelector(amount){
                 pointer-events: all;
             `;
             close.onclick = () => {
-              console.log("onclick",tabCount, amount/2)
               if(tabCount-1 > amount/2) {
-                console.log("tabSelector triggered from onclick")
                 tabSelector(amount);
 
               }
               chrome.runtime.sendMessage({action: "closeTab", tabId: parseInt(tabId)}, function(response) {
-                console.log("Tab closed:", response);
          
               });
 
@@ -208,7 +186,6 @@ function tabSelector(amount){
 // popupAlert("You have 14 tabs open!<br> Once you exceed 15 tabs, the extension will begin automatically closing your least recently used tab <br> The next tab to close is temptab.temptabe.com/temp/temp1346asdgh12345678sdfgasdfdfgf");
 function popupAlert(message) {
   //ik this is a pain to look at but wutever
-  console.log("popupAlert called with message:", message);
   //insert icons
 
 
@@ -278,7 +255,6 @@ function popupAlert(message) {
     pointer-events: all;
   `;
   closeButton.onclick = () => {
-    console.log("Close button clicked");
     alert.parentNode.removeChild(alert);
     setStorageValue('ADismissed', true);
   };
@@ -291,7 +267,6 @@ function popupAlert(message) {
 
 //lock the screen
 function lockScreen(){
-  console.log("lockScreen() triggered");
   const existing = document.getElementById('lock-screen');
   if (existing) return;
 
@@ -313,7 +288,6 @@ function lockScreen(){
 
 }
 function removeTabSelector() {
-  console.log("removeTabSelector() triggered");
   const tabSelector = document.getElementById('tab-selector');
   if (tabSelector) tabSelector.remove();
   tabSelector.parentNode.removeChild(tabSelector);
@@ -321,14 +295,12 @@ function removeTabSelector() {
 
 }
 function unlockScreen() {
-  console.log("unlockScreen() triggered");
   const lockScreen = document.getElementById('lock-screen');
   const tabSelector = document.getElementById('tab-selector');
   
   if (lockScreen) lockScreen.remove();
   removeTabSelector();
 
-  console.log(tabSelector)
   if (tabSelector) tabSelector.remove();
   tabSelector.parentNode.removeChild(tabSelector);
   document.getElementById('tab-selector').remove()
@@ -337,7 +309,6 @@ function unlockScreen() {
 
 //start interval that keeps locking the screen
 function startLocker() {
-  console.log("startLocker() triggered");
   if (!locker) {
     locker = setInterval(() => {
       lockScreen();
@@ -349,7 +320,6 @@ function startLocker() {
 //stop the interval
 //todo make it unlock
 function stopLocker() {
-  console.log("stopLocker() triggered");
   if (locker) {
     setStorageValue('lock', false);
     clearInterval(locker);
@@ -361,12 +331,10 @@ function stopLocker() {
 
 function setStorageValue(key, value){
   chrome.runtime.sendMessage({action: "setStorageValue", key: key, value: value}, function(response) {
-    console.log("Storage value set:", response);
   });
 }
 function getStorageValue(key, callback){
   chrome.runtime.sendMessage({action: "getStorageValue", key: key}, function(response) {
-    console.log("Storage value retrieved:", response);
     callback(response.value);
   });
 }
