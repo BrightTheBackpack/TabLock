@@ -21,17 +21,17 @@
 }
 
 body {
-  margin: 10;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, var(--background-dark) 0%, var(--background-light) 100%);
-  color: var(--text-primary);
-  font-size: 14px;
-  line-height: 1.6;
-  width: 400px;
-  height: fit-content;
-  /* max-height: 450px; */
-  overflow-x: hidden;
+    margin: 10;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--background-dark) 0%, var(--background-light) 100%);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    width: 400px;
+    height: fit-content;
+    /* max-height: 450px; */
+    overflow-x: hidden;
 
 }
 
@@ -45,6 +45,7 @@ body {
     position: relative;
     z-index: 100;
 }
+
 #header h1 {
     margin: 0;
     font-size: 24px;
@@ -68,9 +69,11 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 #settings:active {
     transform: translateY(0);
 }
+
 .main {
     margin: 20px 24px;
     padding: 20px;
@@ -81,10 +84,12 @@ body {
     box-shadow: var(--shadow-light);
     transition: var(--transition);
 }
+
 .main:hover {
     background: rgba(255, 255, 255, 0.08);
     box-shadow: var(--shadow-medium);
 }
+
 .main p {
     margin: 0;
     color: var(--text-secondary);
@@ -101,6 +106,7 @@ body {
     align-items: center;
     gap: 8px;
 }
+
 #tab-count #count {
     font-size: 32px;
     font-weight: 700;
@@ -109,6 +115,7 @@ body {
     margin: 8px 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 #oldest-tab {
     background: rgba(255, 255, 255, 0.05);
     padding: 12px;
@@ -121,35 +128,38 @@ body {
 }
 
 .switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 34px;
-  margin: 0 10px;
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin: 0 10px;
 }
+
 #modeswitch {
     display: flex;
     align-items: center;
     margin-bottom: 24px;
     gap: 12px;
 }
-.switch input { 
-  opacity: 0;
-  width: 0;
-  height: 0;
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #2196F3;
-  -webkit-transition: .4s;
-  transition: .4s;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #2196F3;
+    -webkit-transition: .4s;
+    transition: .4s;
 }
+
 #mode-select:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -161,6 +171,7 @@ body {
     font-weight: 500;
     color: var(--text-secondary);
 }
+
 #mode-select {
     background: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -172,9 +183,11 @@ body {
     cursor: pointer;
     transition: var(--transition);
 }
+
 #mode-select:hover {
     border-color: var(--primary-color);
 }
+
 .settings-item {
     margin-bottom: 20px;
     padding: 16px;
@@ -182,21 +195,31 @@ body {
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .input-line {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 8px;
 }
+
 .input-line p {
     margin: 0;
     font-weight: 500;
     color: var(--text-secondary);
     white-space: nowrap;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .setting-field {
@@ -209,7 +232,10 @@ body {
     transition: var(--transition);
     flex: 1;
 }
-#classA.active, #classB.active, #classC.active {
+
+#classA.active,
+#classB.active,
+#classC.active {
     display: block;
     animation: fadeIn 0.3s ease-out;
 }
@@ -219,12 +245,16 @@ body {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
-#thresholdAError, #decayBError, #amountCError {
+
+#thresholdAError,
+#decayBError,
+#amountCError {
     color: var(--error-color);
     font-size: 12px;
     margin: 4px 0 0 0;
     font-weight: 500;
 }
+
 #tabListDiv {
     position: relative;
 }
@@ -266,14 +296,16 @@ body {
     z-index: 1000;
     max-height: 200px;
     overflow-y: auto;
-    
+
     margin-top: 8px;
 }
+
 @keyframes dropdownShow {
     from {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -292,7 +324,7 @@ body {
 
 
 .dropdown {
-      background-color: transparent;
+    background-color: transparent;
     background-repeat: no-repeat;
     border: none;
     cursor: pointer;
@@ -300,41 +332,44 @@ body {
     outline: none;
 
 }
+
 .slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
 }
 
-input:checked + .slider {
-  background-color: #2196F3;
+input:checked+.slider {
+    background-color: #2196F3;
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
+input:focus+.slider {
+    box-shadow: 0 0 1px #2196F3;
 }
 
-input:checked + .slider:before {
-  -webkit-transform: translateX(26px);
-  -ms-transform: translateX(26px);
-  transform: translateX(26px);
+input:checked+.slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
 }
+
 .dropdown-content {
     display: none;
 }
+
 /* Rounded sliders */
 .slider.round {
-  border-radius: 34px;
+    border-radius: 34px;
 }
 
 .slider.round:before {
-  border-radius: 50%;
+    border-radius: 50%;
 }
 
 #modeswitch {
@@ -357,16 +392,19 @@ input:checked + .slider:before {
     backdrop-filter: blur(20px);
     animation: slideIn 0.3s ease-out;
 }
+
 @keyframes slideIn {
     from {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
+
 #settings-panel h2 {
     margin: 0 0 20px 0;
     font-size: 20px;
@@ -383,6 +421,6 @@ input:checked + .slider:before {
 
 
 .input-line {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }

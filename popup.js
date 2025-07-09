@@ -8,27 +8,27 @@ const settingsPanel = document.getElementById('settings-panel');
 // const submit = document.getElementById('submit');
 const dropdown = document.querySelectorAll('.dropdown');
 
-settingsButton.addEventListener('click', function() {
+settingsButton.addEventListener('click', function () {
     settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
 });
 getStats();
 window.onload = function () {
-chrome.storage.local.get('mode', function (result) {
-    if(result.mode === undefined) {
-        checkbox.value = "A"; // default to mode A if not set
-    }else{
-    checkbox.value = result.mode; // cast undefined to false if not set
+    chrome.storage.local.get('mode', function (result) {
+        if (result.mode === undefined) {
+            checkbox.value = "A"; // default to mode A if not set
+        } else {
+            checkbox.value = result.mode; // cast undefined to false if not set
 
-    }
-    chrome.runtime.sendMessage({ type: "lockUpdate", value: result.lock });
-    toggleModeDisplay(checkbox.value)
+        }
+        chrome.runtime.sendMessage({ type: "lockUpdate", value: result.lock });
+        toggleModeDisplay(checkbox.value)
 
     });
-    
+
 };
 
-for ( const dropdownElement of dropdown) {
-    dropdownElement.addEventListener('click', function() {
+for (const dropdownElement of dropdown) {
+    dropdownElement.addEventListener('click', function () {
         const content = document.getElementById(this.id + 'Content');
         if (content.style.display === 'block') {
             content.style.display = 'none';
@@ -46,19 +46,19 @@ for (const field of settingFields) {
             console.warn(`Setting ${field.id} not found in storage, using default value.`);
         }
     });
-    field.addEventListener('input', function() {
+    field.addEventListener('input', function () {
 
         const fieldId = this.id;
         const fieldValue = this.value;
         let error = handleError(fieldId, fieldValue);
         // let error = true;
-        if(error){
-            chrome.storage.local.set({ [fieldId]: fieldValue }, function() {
-            chrome.runtime.sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
-        });
+        if (error) {
+            chrome.storage.local.set({ [fieldId]: fieldValue }, function () {
+                chrome.runtime.sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
+            });
 
         }
-     
+
     });
 }
 
@@ -94,47 +94,47 @@ for (const field of settingFields) {
 // })
 
 function handleError(id, fieldValue) {
-        if(id === 'thresholdA') {
-            if(fieldValue === '' || isNaN(fieldValue) || fieldValue <= 5 || fieldValue > 60) {
-                displayError(id, 'Invalid input for number of tabs: ' + fieldValue);
-                return false;
-            }else{
-                displayError(id, ''); // Clear error message if input is valid
-            }
+    if (id === 'thresholdA') {
+        if (fieldValue === '' || isNaN(fieldValue) || fieldValue <= 5 || fieldValue > 60) {
+            displayError(id, 'Invalid input for number of tabs: ' + fieldValue);
+            return false;
+        } else {
+            displayError(id, ''); // Clear error message if input is valid
         }
-        if(id === 'decayB') {
-            if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 1 || fieldValue > 30) {
-                displayError(id, 'Invalid input for inactivity time: ' + fieldValue);
-                return false;
-            }else{
-                displayError(id, ''); // Clear error message if input is valid
-            }
+    }
+    if (id === 'decayB') {
+        if (fieldValue === '' || isNaN(fieldValue) || fieldValue < 1 || fieldValue > 30) {
+            displayError(id, 'Invalid input for inactivity time: ' + fieldValue);
+            return false;
+        } else {
+            displayError(id, ''); // Clear error message if input is valid
         }
-        if(id === 'percentB') {
-            if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 25 || fieldValue > 75) {
-                displayError(id, 'Invalid input for percent of tabs: ' + fieldValue);
-                return false;
-            }else{
-                displayError(id, ''); // Clear error message if input is valid
-            }
+    }
+    if (id === 'percentB') {
+        if (fieldValue === '' || isNaN(fieldValue) || fieldValue < 25 || fieldValue > 75) {
+            displayError(id, 'Invalid input for percent of tabs: ' + fieldValue);
+            return false;
+        } else {
+            displayError(id, ''); // Clear error message if input is valid
         }
-        if(id === 'amountC') {
-            if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 2 || fieldValue > 60) {
-                displayError(id, 'Invalid input for number of tabs to lock: ' + fieldValue);
-                return false;
-            }else{
-                displayError(id, ''); // Clear error message if input is valid
-            }
+    }
+    if (id === 'amountC') {
+        if (fieldValue === '' || isNaN(fieldValue) || fieldValue < 2 || fieldValue > 60) {
+            displayError(id, 'Invalid input for number of tabs to lock: ' + fieldValue);
+            return false;
+        } else {
+            displayError(id, ''); // Clear error message if input is valid
         }
-        return true;
+    }
+    return true;
 }
 function displayError(id, error) {
-    const field = document.getElementById(id+"Error");
+    const field = document.getElementById(id + "Error");
     field.textContent = error;
 }
 
 console.log("popup.js loaded");
-checkbox.addEventListener('change', function() {
+checkbox.addEventListener('change', function () {
     toggleModeDisplay(this.value);
 
 
@@ -143,22 +143,22 @@ checkbox.addEventListener('change', function() {
 });
 
 function toggleModeDisplay(mode) {
-        if (mode == "A") {
-        chrome.storage.local.set({ "mode": "A" }, function() {
+    if (mode == "A") {
+        chrome.storage.local.set({ "mode": "A" }, function () {
 
         });
         modeA.style.display = 'block';
         modeB.style.display = 'none';
         modeC.style.display = 'none';
-    } if(mode == "B") {
+    } if (mode == "B") {
 
-        chrome.storage.local.set({ "mode": "B" }, function() {
+        chrome.storage.local.set({ "mode": "B" }, function () {
         });
         modeA.style.display = 'none';
         modeB.style.display = 'block';
         modeC.style.display = 'none';
-    } if(mode == "C") {
-        chrome.storage.local.set({ "mode": "C" }, function() {
+    } if (mode == "C") {
+        chrome.storage.local.set({ "mode": "C" }, function () {
         });
         modeA.style.display = 'none';
         modeB.style.display = 'none';
@@ -166,24 +166,24 @@ function toggleModeDisplay(mode) {
     }
 }
 
-function getStats(){
-    chrome.runtime.sendMessage({ action: "tabCount" }, function(response) {
+function getStats() {
+    chrome.runtime.sendMessage({ action: "tabCount" }, function (response) {
         console.log("Tab count response:", response);
         const countElement = document.getElementById('count');
         countElement.textContent = (response.count || '0') + ', + ' + (response.ignoredCount || '0') + ' ignored';
     });
-    chrome.runtime.sendMessage({ action: "oldestTab" }, function(response) {
+    chrome.runtime.sendMessage({ action: "oldestTab" }, function (response) {
         console.log("Oldest tab response:", response);
         const oldestTabElement = document.getElementById('oldest-tab');
         if (response.url) {
             oldestTabElement.textContent = response.url;
         }
     });
-    chrome.runtime.sendMessage({ action: "tabList" }, function(response) {
+    chrome.runtime.sendMessage({ action: "tabList" }, function (response) {
         let tabList = response.tabList || {};
         const tablistContent = document.getElementById('tabListContent');
         tablistContent.innerHTML = ''; // Clear previous content
-        for (const tabId in tabList){
+        for (const tabId in tabList) {
             const tab = tabList[tabId];
             const tabElement = document.createElement('div');
             tabElement.style.cssText = `
@@ -201,7 +201,7 @@ function getStats(){
             tabFavicon.innerHTML = tab.favicon ? `<img src="${tab.favicon}" alt="Favicon" style="width: 32px; height: 32px;">` : `<img src="https://hc-cdn.hel1.your-objectstorage.com/s/v3/ad157342caedf0c547f2eafc9227436444ec8295_language_129dp_1f1f1f.png" alt="Favicon" style="width: 48px; height: 48px;">`;
             const tabTitle = tab.title ? tab.title : 'No title';
             const tabUrl = tab.url ? tab.url : 'No URL';
-            const tabTime = tab.stopwatch ? `Inactivity: ${Math.floor(tab.stopwatch/60)} minutes` : 'Inactivity: 0 minutes';
+            const tabTime = tab.stopwatch ? `Inactivity: ${Math.floor(tab.stopwatch / 60)} minutes` : 'Inactivity: 0 minutes';
             const block = document.createElement('div');
 
             block.innerHTML = `<div class="tab-title" style="overflow: hidden; white-space: nowrap;"> ${tabTitle}</div> <div class="tab-url" style="overflow:hidden;"> ${tabUrl}</div> `;
@@ -219,7 +219,7 @@ function getStats(){
             font-size: 10px;
             `
             time.innerHTML = `<div class="tab-time"> ${tabTime}</div>`;
-             
+
             const close = document.createElement('button');
             close.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="#ffffff" style="filter: invert(1);">
@@ -243,7 +243,7 @@ function getStats(){
                 pointer-events: all;
             `;
             close.onclick = () => {
-                chrome.runtime.sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function(response) {
+                chrome.runtime.sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function (response) {
                     getStats();
                 });
             };
@@ -267,30 +267,30 @@ function getStats(){
             pointer-events: all;
             `;
             ignore.onclick = () => {
-                chrome.runtime.sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function(response) {
-                    if(response.status === "too many tabs") {
+                chrome.runtime.sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function (response) {
+                    if (response.status === "too many tabs") {
                         alert("You can only ignore up to 3 tabs.");
                     }
                     getStats();
 
                 });
             };
-            
-            
+
+
 
             tabElement.append(tabFavicon)
             tabElement.append(block);
             tabElement.append(time);
             tabElement.append(ignore);
             tabElement.append(close);
-            if(tabList[tabId].ignored) {
+            if (tabList[tabId].ignored) {
                 tabElement.style.backgroundColor = 'rgb(6, 6, 8)'; // Light grey for ignored tabs
                 ignore.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 16 16" fill="none">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M16 16H13L10.8368 13.3376C9.96488 13.7682 8.99592 14 8 14C6.09909 14 4.29638 13.1557 3.07945 11.6953L0 8L3.07945 4.30466C3.14989 4.22013 3.22229 4.13767 3.29656 4.05731L0 0H3L16 16ZM5.35254 6.58774C5.12755 7.00862 5 7.48941 5 8C5 9.65685 6.34315 11 8 11C8.29178 11 8.57383 10.9583 8.84053 10.8807L5.35254 6.58774Z" fill="#000000"/>
 <path d="M16 8L14.2278 10.1266L7.63351 2.01048C7.75518 2.00351 7.87739 2 8 2C9.90091 2 11.7036 2.84434 12.9206 4.30466L16 8Z" fill="#000000"/>
 </svg>`
                 ignore.onclick = () => {
-                    chrome.runtime.sendMessage({ action: "unignoreTab", tabId: parseInt(tabId) }, function(response) {
+                    chrome.runtime.sendMessage({ action: "unignoreTab", tabId: parseInt(tabId) }, function (response) {
                         getStats();
                     });
                 };
@@ -298,7 +298,7 @@ function getStats(){
                     tablistContent.appendChild(tabElement);
                 }, 10); // Adjust the delay as needed
 
-            }else{
+            } else {
                 tablistContent.appendChild(tabElement);
 
             }
