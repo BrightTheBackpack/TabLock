@@ -11,16 +11,45 @@ const dropdown = document.querySelectorAll('.dropdown');
 settingsButton.addEventListener('click', function() {
     settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
 });
+
+//add firefox compatibility
+const getFromStorage = (key) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.get(key, resolve);
+    } else {
+      browser.storage.local.get(key).then(resolve);
+    }
+  });
+};
+const sendMessage = (message) => {
+  if (typeof browser === "undefined") {
+    chrome.runtime.sendMessage(message);
+  } else {
+    browser.runtime.sendMessage(message);
+  }
+};
+const setToStorage = (data) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.set(data, resolve);
+    } else {
+      browser.storage.local.set(data).then(resolve);
+    }
+  });
+};
+
+
 getStats();
 window.onload = function () {
-chrome.storage.local.get('mode', function (result) {
+getFromStorage('mode').then(function (result) {
     if(result.mode === undefined) {
         checkbox.value = "A"; // default to mode A if not set
     }else{
     checkbox.value = result.mode; // cast undefined to false if not set
 
     }
-    chrome.runtime.sendMessage({ type: "lockUpdate", value: result.lock });
+    sendMessage({ type: "lockUpdate", value: result.lock });
     toggleModeDisplay(checkbox.value)
 
     });
@@ -39,7 +68,7 @@ for ( const dropdownElement of dropdown) {
 }
 
 for (const field of settingFields) {
-    chrome.storage.local.get(field.id, function (result) {
+    getFromStorage(field.id).then(function (result) {
         if (result[field.id] !== undefined) {
             field.value = result[field.id];
         } else {
@@ -53,45 +82,15 @@ for (const field of settingFields) {
         let error = handleError(fieldId, fieldValue);
         // let error = true;
         if(error){
-            chrome.storage.local.set({ [fieldId]: fieldValue }, function() {
-            chrome.runtime.sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
-        });
-
+            setToStorage({ [fieldId]: fieldValue }).then(() => {
+                sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
+            });
         }
      
     });
 }
 
-// submit.addEventListener('click', function(event) {
-//     event.preventDefault();
-//     console.log('Submit button clicked');
-//     settingFields.forEach(field => {
-//         const fieldId = field.id;
-//         const fieldValue = field.value;
-//         if(fieldId === 'thresholdA') {
-//             if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 0 || fieldValue > 30) {
-//                 handleError(fieldId, 'Invalid input for number of tabs: ' + fieldValue);
-//                 return;
-//             }
-//         }
-//         if(fieldId === 'decayB') {
-//             if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 1 || fieldValue > 30) {
-//                 handleError(fieldId, 'Invalid input for inactivity time: ' + fieldValue);
-//                 return;
-//             }
-//         }
-//         if(fieldId === 'percentB') {
-//             if(fieldValue === '' || isNaN(fieldValue) || fieldValue < 25 || fieldValue > 75) {
-//                 handleError(fieldId, 'Invalid input for percent of tabs: ' + fieldValue);
-//                 return;
-//             }
-//         }
-//         chrome.storage.local.set({ [fieldId]: fieldValue }, function() {
-//             console.log(`Setting ${fieldId} updated to:`, fieldValue);
-//             chrome.runtime.sendMessage({ type: "settingUpdate", id: fieldId, value: fieldValue });
-//         });
-//     });
-// })
+
 
 function handleError(id, fieldValue) {
         if(id === 'thresholdA') {
@@ -138,13 +137,13 @@ checkbox.addEventListener('change', function() {
     toggleModeDisplay(this.value);
 
 
-    chrome.runtime.sendMessage({ type: "modeUpdate", value: this.value });
+    sendMessage({ type: "modeUpdate", value: this.value });
 
 });
 
 function toggleModeDisplay(mode) {
         if (mode == "A") {
-        chrome.storage.local.set({ "mode": "A" }, function() {
+        setToStorage({ "mode": "A" }).then(() => {
 
         });
         modeA.style.display = 'block';
@@ -152,13 +151,13 @@ function toggleModeDisplay(mode) {
         modeC.style.display = 'none';
     } if(mode == "B") {
 
-        chrome.storage.local.set({ "mode": "B" }, function() {
+        setToStorage({ "mode": "B" }).then(() => {
         });
         modeA.style.display = 'none';
         modeB.style.display = 'block';
         modeC.style.display = 'none';
     } if(mode == "C") {
-        chrome.storage.local.set({ "mode": "C" }, function() {
+        setToStorage({ "mode": "C" }).then(() => {
         });
         modeA.style.display = 'none';
         modeB.style.display = 'none';
@@ -167,19 +166,19 @@ function toggleModeDisplay(mode) {
 }
 
 function getStats(){
-    chrome.runtime.sendMessage({ action: "tabCount" }, function(response) {
+    sendMessage({ action: "tabCount" }, function(response) {
         console.log("Tab count response:", response);
         const countElement = document.getElementById('count');
         countElement.textContent = (response.count || '0') + ', + ' + (response.ignoredCount || '0') + ' ignored';
     });
-    chrome.runtime.sendMessage({ action: "oldestTab" }, function(response) {
+    sendMessage({ action: "oldestTab" }, function(response) {
         console.log("Oldest tab response:", response);
         const oldestTabElement = document.getElementById('oldest-tab');
         if (response.url) {
             oldestTabElement.textContent = response.url;
         }
     });
-    chrome.runtime.sendMessage({ action: "tabList" }, function(response) {
+    sendMessage({ action: "tabList" }, function(response) {
         let tabList = response.tabList || {};
         const tablistContent = document.getElementById('tabListContent');
         tablistContent.innerHTML = ''; // Clear previous content
@@ -243,7 +242,7 @@ function getStats(){
                 pointer-events: all;
             `;
             close.onclick = () => {
-                chrome.runtime.sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function(response) {
+                sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function(response) {
                     getStats();
                 });
             };
@@ -267,7 +266,7 @@ function getStats(){
             pointer-events: all;
             `;
             ignore.onclick = () => {
-                chrome.runtime.sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function(response) {
+                sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function(response) {
                     if(response.status === "too many tabs") {
                         alert("You can only ignore up to 3 tabs.");
                     }
@@ -290,7 +289,7 @@ function getStats(){
 <path d="M16 8L14.2278 10.1266L7.63351 2.01048C7.75518 2.00351 7.87739 2 8 2C9.90091 2 11.7036 2.84434 12.9206 4.30466L16 8Z" fill="#000000"/>
 </svg>`
                 ignore.onclick = () => {
-                    chrome.runtime.sendMessage({ action: "unignoreTab", tabId: parseInt(tabId) }, function(response) {
+                    sendMessage({ action: "unignoreTab", tabId: parseInt(tabId) }, function(response) {
                         getStats();
                     });
                 };

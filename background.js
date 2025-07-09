@@ -14,6 +14,35 @@ userInfo.state = "active";
 loadStorageValues();
 popupMessageReceiver();
 
+//add firefox compatibility
+const getFromStorage = (key) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.get(key, resolve);
+    } else {
+      browser.storage.local.get(key).then(resolve);
+    }
+  });
+};
+const sendMessage = (message) => {
+  if (typeof browser === "undefined") {
+    chrome.runtime.sendMessage(message);
+  } else {
+    browser.runtime.sendMessage(message);
+  }
+};
+const setToStorage = (data) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.set(data, resolve);
+    } else {
+      browser.storage.local.set(data).then(resolve);
+    }
+  });
+};
+
+
+
 //when new tab is created, add it to the tablist
 chrome.tabs.onCreated.addListener(function (tab) {
   tablist[tab.id] = {url: tab.url, active: tab.active, lastActive: Date.now(), decayed: false, stopwatch: 0, title: tab.title, favicon: tab.favIconUrl};
@@ -34,12 +63,12 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
 //messages from popup and content
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if(request.action === "setStorageValue"){
-    chrome.storage.local.set({[request.key]: request.value}, function() {
+    setToStorage({[request.key]: request.value}).then(function() {
     });
     
   }
   if(request.action === "getStorageValue"){
-    chrome.storage.local.get([request.key], function(result) {
+    getFromStorage(request.key).then(function(result) {
       sendResponse({value: result[request.key]});
     });
     return true; // Keep the message channel open for sendResponse
@@ -116,17 +145,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
   }
 });
-
-
+userInfo.state = "active";
+try{
 chrome.idle.setDetectionInterval(30); //set idle detection interval to 30 seconds
-
-//alarm to check for tab decay
-chrome.alarms.create('checkTabs', {
-  delayInMinutes: 1,
-  periodInMinutes: 1
-});
-
-//listner for user idle
 chrome.idle.onStateChanged.addListener((newState) => {
 
     if (newState === "idle" || newState === "locked") {
@@ -140,22 +161,16 @@ chrome.idle.onStateChanged.addListener((newState) => {
     }
   });
 
+}catch(e){
 
-updateActiveTab();
+}
 
-//alarm to check for tab decay 2.0
-chrome.runtime.onInstalled.addListener(async ({ reason }) => {
-  if (reason !== 'install') {
-    return;
-  }
-
-  await chrome.alarms.create('checkTabs', {
-    delayInMinutes: 1,
-    periodInMinutes: 1
-  });
+//alarm to check for tab decay
+try{
+chrome.alarms.create('checkTabs', {
+  delayInMinutes: 1,
+  periodInMinutes: 1
 });
-
-
 chrome.alarms.onAlarm.addListener((alarm) => {
   
   if (alarm.name === 'checkTabs') {
@@ -170,23 +185,42 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 }})
 
+}catch(e){
+
+}
+
+//listner for user idle
+
+
+updateActiveTab();
+
+//alarm to check for tab decay 2.0
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason !== 'install') {
+    return;
+  }
+
+});
+
+
+
 function c() {
   let tabCount = Object.values(tablist).filter(tab => !tab.ignored).length;
 
   if( tabCount > parseInt(amountC)) {
-    
-    chrome.storage.local.set({lock:true}, function() {
+
+    setToStorage({lock:true}).then(function() {
       chrome.tabs.query({ active: true }, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true });
+        sendMessage(tabs[0].id, { action: "lockUpdate", data: true });
       });
     });
   }
-  chrome.storage.local.get(['lock'], function(result) {
+  getFromStorage(['lock']).then(function(result) {
     if(result.lock === true){
       if(tabCount > parseInt(amountC)/2){
-        chrome.storage.local.set({lock:true}, function() {
+        setToStorage({lock:true}).then(function() {
           chrome.tabs.query({ active: true }, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, { action: "lockUpdate", data: true });
+            sendMessage(tabs[0].id, { action: "lockUpdate", data: true });
           });
         });
       }else{
@@ -264,15 +298,15 @@ function updateActiveTab() {
 }
 
 function loadStorageValues() {
-  chrome.storage.local.get(['mode', 'thresholdA', 'decayB', 'percentB', 'amountC'], function (result) {
+  getFromStorage(['mode', 'thresholdA', 'decayB', 'percentB', 'amountC']).then(function (result) {
     thresholdA = result.thresholdA || 15;
     decayB = result.decayB || 20;
     percentB = result.percentB || 60;
     mode = result.mode || "A";
     amountC = result.amountC || 5;
     if(mode !== "C"){
-      chrome.storage.local.set({lock: false}, function() {
-        chrome.tabs.sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
+      setToStorage({lock: false}).then(function() {
+        sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
       });
     }
   });
@@ -284,8 +318,8 @@ function popupMessageReceiver() {
       mode = message.value;
       modeAWarningAlert()
       if(mode !== "C"){
-        chrome.storage.local.set({lock: false}, function() {
-          chrome.tabs.sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
+        setToStorage({lock: false}).then(function() {
+          sendMessage(previousActiveTab, { action: "lockUpdate", data: false });
         });
       
       }
@@ -373,11 +407,11 @@ function modeAWarningAlert(){
   oldestTabUrl = oldestTab.url;
   let totalTabs = Object.values(tablist).filter(tab => !tab.ignored).length;
   if((totalTabs >= thresholdA-1) && mode === "A") {
-    chrome.storage.local.set({AWarning : true}, function() {
+    setToStorage({AWarning : true}).then(function() {
     });
-    chrome.storage.local.get(['ADismissed'], function (result) {
+    getFromStorage(['ADismissed']).then(function (result) {
       if (result.ADismissed) {
-        chrome.tabs.sendMessage(previousActiveTab, { action: "closeAlert" });
+        sendMessage(previousActiveTab, { action: "closeAlert" });
 
         return;
       }else{
@@ -394,16 +428,16 @@ function modeAWarningAlert(){
           [null, null] 
         );
         let url = oldestTab.url;
-         chrome.tabs.sendMessage(previousActiveTab, { action: "popupAlert", message: `You have ${totalTabs} tabs open!<br> The next tab to close is ${url}` });
+         sendMessage(previousActiveTab, { action: "popupAlert", message: `You have ${totalTabs} tabs open!<br> The next tab to close is ${url}` });
 
       }
     });
   }else{
-    chrome.storage.local.set({AWarning : false}, function() {
+    setToStorage({AWarning : false}).then(function() {
     });
-    chrome.storage.local.set({ADismissed: false}, function() {
+    setToStorage({ADismissed: false}).then(function() {
     });
-    chrome.tabs.sendMessage(previousActiveTab, { action: "closeAlert" });
+    sendMessage(previousActiveTab, { action: "closeAlert" });
   }
 
 }

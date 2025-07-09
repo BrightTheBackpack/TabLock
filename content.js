@@ -8,8 +8,35 @@ div.id = 'tab-lock-extension';
 
 document.body.appendChild(div);
 //get lock status
+//add firefox compatibility
+const getFromStorage = (key) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.get(key, resolve);
+    } else {
+      browser.storage.local.get(key).then(resolve);
+    }
+  });
+};
+const sendMessage = (message) => {
+  if (typeof browser === "undefined") {
+    chrome.runtime.sendMessage(message);
+  } else {
+    browser.runtime.sendMessage(message);
+  }
+};
+const setToStorage = (data) => {
+  return new Promise((resolve) => {
+    if (typeof browser === "undefined") {
+      chrome.storage.local.set(data, resolve);
+    } else {
+      browser.storage.local.set(data).then(resolve);
+    }
+  });
+};
 
-chrome.storage.local.get(['lock'], function (result) {
+
+getFromStorage(['lock']).then(function (result) {
     locked = result.lock || false;
     if (locked) {
         getStorageValue('amountC', function(amountC) {
@@ -21,16 +48,13 @@ chrome.storage.local.get(['lock'], function (result) {
       stopLocker()
     }
 });
-// let intervalId = setInterval(() => {
-//   chrome.runtime.sendMessage({ action: "tick",tab: window.location.href });
 
-// }, 1000);
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
     clearInterval(intervalId);
   } else if( document.visibilityState === 'visible') {
     intervalId = setInterval(() => {
-      chrome.runtime.sendMessage({ action: "tick", tab: window.location.href });
+      sendMessage({ action: "tick", tab: window.location.href });
 
     }, 1000);
   }
@@ -88,7 +112,7 @@ function tabSelector(amount){
   `;
   description.textContent = `Close half of your tabs to unlock`
   menu.appendChild(description);
-  chrome.runtime.sendMessage({action: "tabList"}, function(response) {
+  sendMessage({action: "tabList"}, function(response) {
     let tablist = response.tabList;
     let tabCount = Object.keys(tablist).length;
 
@@ -167,7 +191,7 @@ function tabSelector(amount){
                 tabSelector(amount);
 
               }
-              chrome.runtime.sendMessage({action: "closeTab", tabId: parseInt(tabId)}, function(response) {
+              sendMessage({action: "closeTab", tabId: parseInt(tabId)}, function(response) {
          
               });
 
@@ -330,11 +354,11 @@ function stopLocker() {
 }
 
 function setStorageValue(key, value){
-  chrome.runtime.sendMessage({action: "setStorageValue", key: key, value: value}, function(response) {
+  sendMessage({action: "setStorageValue", key: key, value: value}, function(response) {
   });
 }
 function getStorageValue(key, callback){
-  chrome.runtime.sendMessage({action: "getStorageValue", key: key}, function(response) {
+  sendMessage({action: "getStorageValue", key: key}, function(response) {
     callback(response.value);
   });
 }
