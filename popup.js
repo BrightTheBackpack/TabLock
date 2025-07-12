@@ -7,7 +7,8 @@ const settingsButton = document.getElementById('settings');
 const settingsPanel = document.getElementById('settings-panel');
 // const submit = document.getElementById('submit');
 const dropdown = document.querySelectorAll('.dropdown');
-
+const amountCInput = document.getElementById('amountC')
+const closeCInput = document.getElementById('closeC')
 settingsButton.addEventListener('click', function () {
     settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
 });
@@ -43,7 +44,7 @@ for (const field of settingFields) {
         if (result[field.id] !== undefined) {
             field.value = result[field.id];
         } else {
-            console.warn(`Setting ${field.id} not found in storage, using default value.`);
+            // console.warn(`Setting ${field.id} not found in storage, using default value.`);
         }
     });
     field.addEventListener('input', function () {
@@ -123,8 +124,26 @@ function handleError(id, fieldValue) {
             displayError(id, 'Invalid input for number of tabs to lock: ' + fieldValue);
             return false;
         } else {
+            if(amountC < closeCInput.value){
+                displayError(id, 'Must be higher than unlock tab amount+ ' + fieldValue)
+                return false
+            }
             displayError(id, ''); // Clear error message if input is valid
         }
+    }
+    if (id=== 'closeC') {
+        if (fieldValue === '' || isNaN(fieldValue) || fieldValue < 2 || fieldValue > 60) {
+            displayError(id, 'Invalid input for number of tabs for unlock: ' + fieldValue);
+            return false;
+        } else {
+            if(fieldValue > amountCInput.value){
+                displayError(id, 'Must be lower than lock amount: ' + fieldValue);
+                return false;
+            }else{
+                displayError(id, ''); // Clear error message if input is valid
+
+            }
+        } 
     }
     return true;
 }
@@ -269,7 +288,7 @@ function getStats() {
             ignore.onclick = () => {
                 chrome.runtime.sendMessage({ action: "ignoreTab", tabId: parseInt(tabId) }, function (response) {
                     if (response.status === "too many tabs") {
-                        alert("You can only ignore up to 3 tabs.");
+                        alert("You can only ignore up to 4 tabs.");
                     }
                     getStats();
 

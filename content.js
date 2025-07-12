@@ -13,8 +13,11 @@ chrome.storage.local.get(['lock'], function (result) {
   locked = result.lock || false;
   if (locked) {
     getStorageValue('amountC', function (amountC) {
-      startLocker();
-      tabSelector(amountC);
+      getStorageValue('closeC', function (closeC){
+        startLocker();
+        tabSelector(amountC, closeC);
+  
+      })
     });
 
   } else {
@@ -57,8 +60,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       popupAlert.parentNode.removeChild(popupAlert);
     }
   }
+  if( request.action === "alert"){
+    alert(request.message)
+  }
 });
-function tabSelector(amount) {
+function tabSelector(amount, close) {
   let prevTabSelector = document.getElementById('tab-selector');
   if (prevTabSelector) {
     prevTabSelector.remove();
@@ -162,8 +168,8 @@ function tabSelector(amount) {
                 pointer-events: all;
             `;
       close.onclick = () => {
-        if (tabCount - 1 > amount / 2) {
-          tabSelector(amount);
+        if (tabCount - 1 > (amount - close)) {
+          tabSelector(amount, close);
 
         }
         chrome.runtime.sendMessage({ action: "closeTab", tabId: parseInt(tabId) }, function (response) {

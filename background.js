@@ -8,6 +8,7 @@ let isChromeFocused = true;
 let decayB;
 let percentB;
 let amountC;
+let closeC;
 let oldestTabUrl;
 let stopwatchStart = Date.now();
 userInfo.state = "active";
@@ -56,6 +57,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     sendResponse({ tabList: tablist });
   }
   if (request.action === "closeTab") {
+    sendAlert('test')
+
     chrome.tabs.remove(request.tabId, function () {
       delete tablist[request.tabId];
       modeAWarningAlert();
@@ -68,7 +71,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
   if (request.action === "ignoreTab") {
     let totalIgnored = Object.values(tablist).filter(tab => tab.ignored).length;
-    if (totalIgnored < 3) {
+    if (totalIgnored < 4) {
       const tabId = request.tabId;
       tablist[tabId].ignored = true;
       sendResponse({ status: "success" });
@@ -85,8 +88,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
   if (request.action === "closeTab") {
     const tabId = request.tabId;
+    sendAlert('test')
+
     chrome.tabs.remove(tabId, function () {
       delete tablist[tabId];
+      
       modeAWarningAlert();
       if (mode === "C") {
         c();
@@ -107,6 +113,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             tablist[tab.id].stopwatch += 1;
           }
           if (tablist[tab.id].stopwatch >= (parseInt(decayB) * 60) && (mode === "B")) {
+            sendAlert('test')
+
             chrome.tabs.remove(tab.id);
             delete tablist[tab.id];
           }
@@ -223,6 +231,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 });
 //when tab deleted, remove it from the tablist
 chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+
   delete tablist[tabId];
   modeAWarningAlert();
   if (mode === "C") {
@@ -307,6 +316,9 @@ function popupMessageReceiver() {
       if (message.id === "amountC") {
         amountC = message.value;
       }
+      if (message.id === "closeC"){
+        closeC = message.value;
+      }
     }
 
   });
@@ -350,6 +362,7 @@ function a() {
     );
 
     oldestTabUrl = oldestTab.url;
+    sendAlert('test')
 
     chrome.tabs.remove([parseInt(tabID)])
     delete tablist[tabID];
@@ -407,4 +420,8 @@ function modeAWarningAlert() {
     chrome.tabs.sendMessage(previousActiveTab, { action: "closeAlert" });
   }
 
+}
+function sendAlert(message){
+  console.log("sending alert")
+  chrome.tabs.sendMessage(previousActiveTab, { action: 'alert', message: message})
 }
